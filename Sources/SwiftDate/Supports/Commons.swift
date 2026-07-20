@@ -274,25 +274,25 @@ public extension Calendar.Component {
 		case .nanosecond: return NSCalendar.Unit.nanosecond
 		case .calendar: return NSCalendar.Unit.calendar
 		case .timeZone: return NSCalendar.Unit.timeZone
-        case .isLeapMonth:
-            if #available(macOS 26.0, iOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-                return NSCalendar.Unit.isLeapMonth
-            } else {
-                return []
-            }
-        case .isRepeatedDay:
-            if #available(macOS 26.0, iOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
-                return NSCalendar.Unit.isRepeatedDay
-            } else {
-                return []
-            }
-        case .dayOfYear:
-            if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
-                return NSCalendar.Unit.dayOfYear
-            } else {
-                return []
-            }
-        @unknown default:
+		case .isLeapMonth:
+			if #available(macOS 26.0, iOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+				return NSCalendar.Unit.isLeapMonth
+			} else {
+				return []
+			}
+		case .isRepeatedDay:
+			if #available(macOS 26.0, iOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+				return NSCalendar.Unit.isRepeatedDay
+			} else {
+				return []
+			}
+		case .dayOfYear:
+			if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+				return NSCalendar.Unit.dayOfYear
+			} else {
+				return []
+			}
+		@unknown default:
 			fatalError("Unsupported type \(self)")
 		}
 	}
