@@ -74,7 +74,7 @@ extension Calendar.Identifier: @retroactive CustomStringConvertible {
 		case .vietnamese:			return "vietnamese"
 		case .vikram:				return "vikram"
 		@unknown default:
-			fatalError("Unsupported calendar \(self)")
+			fatalError("Unsupported calendar identifier")
 		}
 	}
 
