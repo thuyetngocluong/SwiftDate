@@ -13,5 +13,5 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/malcommac/SwiftDate.git", :tag => s.version.to_s }
   s.source_files = 'Sources/**/*.swift'
   s.frameworks  = "Foundation"
-  s.swift_versions = ['5.5']
+  s.swift_versions = ['6.0']
 end

@@ -270,7 +270,12 @@ class TestDateInRegion_Components: XCTestCase {
 
         let now = Date()
         XCTAssert((now.addingTimeInterval(3600) - now).in(.hour) == 1, "Failed to compare date")
-        XCTAssert((now.addingTimeInterval(3600) - now) == 1.hours, "Failed to compare date")
+        // Direct comparison against `1.hours` is not possible anymore: newer
+        // Foundation returns every requested component (zero-filled, with
+        // calendar/timezone attached) from `dateComponents(from:to:)`, so
+        // whole-value `DateComponents` equality no longer matches a
+        // single-component value.
+        XCTAssert((now.addingTimeInterval(3600) - now).hour == 1, "Failed to compare date")
     }
     
 }

@@ -11,27 +11,65 @@
 //
 
 import Foundation
+import os
 
-// MARK: - Atomic Variable Support
+// MARK: - Lock Protected Value Support
 
-@propertyWrapper
-internal struct Atomic<Value> {
-    private let queue = DispatchQueue(label: "com.vadimbulavin.atomic")
-    private var value: Value
+/// An unfair-lock protected mutable box used to expose the library-wide
+/// configuration (`SwiftDate.defaultRegion`, `DateFormats.autoFormats`) as
+/// concurrency-safe shared state under Swift 6 strict data-race safety.
+/// On iOS 16/macOS 13 and later it uses Apple's `OSAllocatedUnfairLock`;
+/// on older systems it falls back to the C `os_unfair_lock` API.
+internal final class OSUnfairLocked<Value: Sendable>: @unchecked Sendable {
 
-    init(wrappedValue: Value) {
-        self.value = wrappedValue
-    }
-    
-    var wrappedValue: Value {
-        get {
-            return queue.sync { value }
-        }
-        set {
-            queue.sync { value = newValue }
-        }
-    }
-    
+	/// `OSAllocatedUnfairLock<Value>` holding the value itself; type-erased
+	/// because the type cannot be named at this deployment target.
+	private let modernLock: (any Sendable)?
+
+	// Legacy fallback: `os_unfair_lock` must live at a stable memory address
+	// (Swift is free to move a stored struct), so it is kept on the heap.
+	private let legacyLockPointer: UnsafeMutablePointer<os_unfair_lock>?
+	private var legacyValue: Value?
+
+	init(_ value: Value) {
+		if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+			self.modernLock = OSAllocatedUnfairLock(initialState: value)
+			self.legacyLockPointer = nil
+			self.legacyValue = nil
+		} else {
+			self.modernLock = nil
+			let pointer = UnsafeMutablePointer<os_unfair_lock>.allocate(capacity: 1)
+			pointer.initialize(to: os_unfair_lock())
+			self.legacyLockPointer = pointer
+			self.legacyValue = value
+		}
+	}
+
+	deinit {
+		legacyLockPointer?.deinitialize(count: 1)
+		legacyLockPointer?.deallocate()
+	}
+
+	var value: Value {
+		get {
+			if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+				return (modernLock as! OSAllocatedUnfairLock<Value>).withLock { $0 }
+			}
+			os_unfair_lock_lock(legacyLockPointer!)
+			defer { os_unfair_lock_unlock(legacyLockPointer!) }
+			return legacyValue!
+		}
+		set {
+			if #available(macOS 13.0, iOS 16.0, tvOS 16.0, watchOS 9.0, *) {
+				(modernLock as! OSAllocatedUnfairLock<Value>).withLock { $0 = newValue }
+				return
+			}
+			os_unfair_lock_lock(legacyLockPointer!)
+			defer { os_unfair_lock_unlock(legacyLockPointer!) }
+			legacyValue = newValue
+		}
+	}
+
 }
 
 // MARK: - DateFormatter
@@ -139,10 +177,19 @@ public struct DateFormats {
 		"HH"
 	]
 
+	private static let _autoFormats = OSUnfairLocked<[String]>(DateFormats.builtInAutoFormat)
+
 	/// This is the ordered list of all formats SwiftDate can use in order to attempt parsing a passaed
 	/// date expressed as string. Evaluation is made in order; you can add or remove new formats as you wish.
 	/// In order to reset the list call `resetAutoFormats()` function.
-	public static var autoFormats: [String] = DateFormats.builtInAutoFormat
+	/// Access is synchronized and can be safely performed by concurrent threads.
+	/// NOTE: each get/set is individually atomic; a compound read-modify-write
+	/// (ie. `autoFormats.append(...)`) is not atomic as a whole and can lose
+	/// updates when performed by concurrent threads.
+	public static var autoFormats: [String] {
+		get { _autoFormats.value }
+		set { _autoFormats.value = newValue }
+	}
 
 	/// Default ISO8601 format string
 	public static let iso8601: String = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
@@ -227,7 +274,25 @@ public extension Calendar.Component {
 		case .nanosecond: return NSCalendar.Unit.nanosecond
 		case .calendar: return NSCalendar.Unit.calendar
 		case .timeZone: return NSCalendar.Unit.timeZone
-		@unknown default:
+        case .isLeapMonth:
+            if #available(macOS 26.0, iOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+                return NSCalendar.Unit.isLeapMonth
+            } else {
+                return []
+            }
+        case .isRepeatedDay:
+            if #available(macOS 26.0, iOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+                return NSCalendar.Unit.isRepeatedDay
+            } else {
+                return []
+            }
+        case .dayOfYear:
+            if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+                return NSCalendar.Unit.dayOfYear
+            } else {
+                return []
+            }
+        @unknown default:
 			fatalError("Unsupported type \(self)")
 		}
 	}
@@ -295,49 +360,3 @@ public struct TimeCalculationOptions {
 	}
 }
 
-// MARK: - compactMap for Swift 4.0 (not necessary > 4.0)
-
-#if swift(>=4.1)
-#else
-	extension Collection {
-		func compactMap<ElementOfResult>(
-			_ transform: (Element) throws -> ElementOfResult?
-			) rethrows -> [ElementOfResult] {
-			return try flatMap(transform)
-		}
-	}
-#endif
-
-// MARK: - Foundation Bundle
-
-private class BundleFinder {}
-
-extension Foundation.Bundle {
-    
-    /// Returns the resource bundle associated with the current Swift module.
-    /// This is used instead of `module` to allows compatibility outside the SwiftPM environment (ie. CocoaPods).
-    static var appModule: Bundle? = {
-        let bundleName = "SwiftDate_SwiftDate"
-
-        let candidates = [
-            // Bundle should be present here when the package is linked into an App.
-            Bundle.main.resourceURL,
-
-            // Bundle should be present here when the package is linked into a framework.
-            Bundle(for: BundleFinder.self).resourceURL,
-
-            // For command-line tools.
-            Bundle.main.bundleURL,
-        ]
-
-        for candidate in candidates {
-            let bundlePath = candidate?.appendingPathComponent(bundleName + ".bundle")
-            if let bundle = bundlePath.flatMap(Bundle.init(url:)) {
-                return bundle
-            }
-        }
-        
-        return nil
-    }()
-    
-}

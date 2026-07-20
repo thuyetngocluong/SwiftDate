@@ -14,7 +14,7 @@ import Foundation
 
 public class ISOFormatter: DateToStringTrasformable {
 
-	public struct Options: OptionSet {
+	public struct Options: OptionSet, Sendable {
 		public let rawValue: Int
 
 		public init(rawValue: Int) {

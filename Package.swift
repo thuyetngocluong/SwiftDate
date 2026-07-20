@@ -1,4 +1,4 @@
-// swift-tools-version:5.5
+// swift-tools-version:6.0
 import PackageDescription
 
 let package = Package(
@@ -15,13 +15,10 @@ let package = Package(
     targets: [
         .target(
             name: "SwiftDate",
-            dependencies: [],
-			resources: [
-				.copy("Formatters/RelativeFormatter/langs"),
-                .process("Resources")
-			]),
+            dependencies: []),
         .testTarget(
             name: "SwiftDateTests",
             dependencies: ["SwiftDate"])
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

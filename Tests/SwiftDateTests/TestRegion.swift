@@ -80,8 +80,12 @@ class TestRegion: XCTestCase {
 
 		// Codable/Decodable for Region
 		do {
-			let encodedJSON_A = try JSONEncoder().encode(regionA)
-			let encodedJSON_B = try JSONEncoder().encode(regionB)
+			// Sorted keys keep the encoded output deterministic so it can be
+			// compared against a fixed string below.
+			let encoder = JSONEncoder()
+			encoder.outputFormatting = .sortedKeys
+			let encodedJSON_A = try encoder.encode(regionA)
+			let encodedJSON_B = try encoder.encode(regionB)
 			XCTAssert( (encodedJSON_A == encodedJSON_B), "Same data regions does not encode the same")
 
 			let decodedJSON_RegionA = try JSONDecoder().decode(Region.self, from: encodedJSON_A)
@@ -89,7 +93,7 @@ class TestRegion: XCTestCase {
 			XCTAssert( (decodedJSON_RegionA == decodedJSON_RegionB), "Same data decoded region are not the same")
 
 			let stringJSON_A = String(data: encodedJSON_A, encoding: .utf8)
-			let compareStringJSON_A = "{\"timezone\":\"Europe\\/Oslo\",\"locale\":\"en\",\"calendar\":\"gregorian\"}"
+			let compareStringJSON_A = "{\"calendar\":\"gregorian\",\"locale\":\"en\",\"timezone\":\"Europe\\/Oslo\"}"
 			XCTAssert( (stringJSON_A! == compareStringJSON_A), "JSON differ in encodable")
 
 		} catch let err {

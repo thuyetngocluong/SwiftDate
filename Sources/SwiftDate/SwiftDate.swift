@@ -16,10 +16,16 @@ public struct SwiftDate {
 
 	private init() { }
 
+	private static let _defaultRegion = OSUnfairLocked<Region>(Region.UTC)
+
 	/// The default region is used to manipulate and work with plain `Date` object and
 	/// wherever a region parameter is optional. By default region is the to GMT timezone
 	/// along with the default device's locale and calendar (both autoupdating).
-	public static var defaultRegion = Region.UTC
+	/// Access is synchronized and can be safely performed by concurrent threads.
+	public static var defaultRegion: Region {
+		get { _defaultRegion.value }
+		set { _defaultRegion.value = newValue }
+	}
 
 	/// This is the ordered list of all formats SwiftDate can use in order to attempt parsing a passaed
 	/// date expressed as string. Evaluation is made in order; you can add or remove new formats as you wish.

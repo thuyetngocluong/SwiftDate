@@ -72,7 +72,7 @@ public class ISOParser: StringToDateTransformable {
 		case thursday = 3
 	}
 
-	public struct Options {
+	public struct Options: Sendable {
 
 		/// Time separator character. By default is `:`.
 		var time_separator: ISOParser.ISOChar = ":"

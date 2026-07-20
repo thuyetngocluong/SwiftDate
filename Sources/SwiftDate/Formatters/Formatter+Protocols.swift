@@ -35,7 +35,7 @@ public protocol StringToDateTransformable {
 /// - date: Date only format (short = "2/27/17", medium = "Feb 27, 2017", long = "February 27, 2017", full = "Monday, February 27, 2017"
 /// - time: Time only format (short = "2:22 PM", medium = "2:22:06 PM", long = "2:22:06 PM EST", full = "2:22:06 PM Eastern Standard Time"
 /// - dateTime: Date/Time format (short = "2/27/17, 2:22 PM", medium = "Feb 27, 2017, 2:22:06 PM", long = "February 27, 2017 at 2:22:06 PM EST", full = "Monday, February 27, 2017 at 2:22:06 PM Eastern Standard Time"
-public enum DateToStringStyles {
+public enum DateToStringStyles: Sendable {
 	case iso(_: ISOFormatter.Options)
 	case extended
 	case rss
@@ -102,7 +102,7 @@ public enum DateToStringStyles {
 /// - strict: custom string format with lenient options active
 /// - custom: custom string format
 /// - standard: A generic standard format date i.e. "EEE MMM dd HH:mm:ss Z yyyy"
-public enum StringToDateStyles {
+public enum StringToDateStyles: Sendable {
 	case iso(_: ISOParser.Options)
 	case extended
 	case rss

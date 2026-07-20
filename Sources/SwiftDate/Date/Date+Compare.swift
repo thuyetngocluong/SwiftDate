@@ -181,6 +181,14 @@ extension Date {
             return dateComponents.nanosecond
         case .calendar, .timeZone:
             return nil
+        case .dayOfYear:
+            if #available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, visionOS 2.0, *) {
+                return dateComponents.dayOfYear
+            }
+            return nil
+        case .isLeapMonth, .isRepeatedDay:
+            // Boolean metadata, no integer difference exists.
+            return nil
         @unknown default:
             assert(false, "unknown date component")
         }

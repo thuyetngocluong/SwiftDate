@@ -42,7 +42,7 @@ extension Calendar.Identifier: CalendarConvertible {
 
 // MARK: - Support for Calendar.Identifier encoding with Codable
 
-extension Calendar.Identifier: CustomStringConvertible {
+extension Calendar.Identifier: @retroactive CustomStringConvertible {
 
 	public var description: String {
 		switch self {
@@ -62,6 +62,17 @@ extension Calendar.Identifier: CustomStringConvertible {
 		case .republicOfChina:		return "republicOfChina"
 		case .islamicTabular:		return "islamicTabular"
 		case .islamicUmmAlQura:		return "islamicUmmAlQura"
+		case .bangla:				return "bangla"
+		case .dangi:				return "dangi"
+		case .gujarati:				return "gujarati"
+		case .kannada:				return "kannada"
+		case .malayalam:			return "malayalam"
+		case .marathi:				return "marathi"
+		case .odia:					return "odia"
+		case .tamil:				return "tamil"
+		case .telugu:				return "telugu"
+		case .vietnamese:			return "vietnamese"
+		case .vikram:				return "vikram"
 		@unknown default:
 			fatalError("Unsupported calendar \(self)")
 		}
