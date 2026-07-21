@@ -62,6 +62,7 @@ extension Calendar.Identifier: @retroactive CustomStringConvertible {
 		case .republicOfChina:		return "republicOfChina"
 		case .islamicTabular:		return "islamicTabular"
 		case .islamicUmmAlQura:		return "islamicUmmAlQura"
+#if compiler(>=6.2) // Regional calendar identifiers added in Xcode 26 / iOS 26 SDK
 		case .bangla:				return "bangla"
 		case .dangi:				return "dangi"
 		case .gujarati:				return "gujarati"
@@ -73,6 +74,7 @@ extension Calendar.Identifier: @retroactive CustomStringConvertible {
 		case .telugu:				return "telugu"
 		case .vietnamese:			return "vietnamese"
 		case .vikram:				return "vikram"
+#endif
 		@unknown default:
 			fatalError("Unsupported calendar identifier")
 		}
